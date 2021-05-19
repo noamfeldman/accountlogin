@@ -1,21 +1,34 @@
 package com.borderfree.account.login.ui.login;
 
+import android.content.Context;
+import android.util.Log;
+import android.util.Patterns;
+
 import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MutableLiveData;
 import androidx.lifecycle.ViewModel;
 
-import android.util.Patterns;
-
+import com.borderfree.account.login.R;
+import com.borderfree.account.login.data.AccountRestClient;
 import com.borderfree.account.login.data.LoginRepository;
 import com.borderfree.account.login.data.Result;
+import com.borderfree.account.login.data.model.AccountLoginData;
 import com.borderfree.account.login.data.model.LoggedInUser;
-import com.borderfree.account.login.R;
+import com.google.gson.Gson;
+import com.loopj.android.http.JsonHttpResponseHandler;
+
+import org.json.JSONObject;
+
+import cz.msebera.android.httpclient.Header;
+
+import static android.util.Log.DEBUG;
+import static android.util.Log.WARN;
 
 public class LoginViewModel extends ViewModel {
 
-    private MutableLiveData<LoginFormState> loginFormState = new MutableLiveData<>();
-    private MutableLiveData<LoginResult> loginResult = new MutableLiveData<>();
-    private LoginRepository loginRepository;
+    private final MutableLiveData<LoginFormState> loginFormState = new MutableLiveData<>();
+    private final MutableLiveData<LoginResult> loginResult = new MutableLiveData<>();
+    private final LoginRepository loginRepository;
 
     LoginViewModel(LoginRepository loginRepository) {
         this.loginRepository = loginRepository;
@@ -39,6 +52,26 @@ public class LoginViewModel extends ViewModel {
         } else {
             loginResult.setValue(new LoginResult(R.string.login_failed));
         }
+    }
+
+    public void loginAccount(Context context, String email, String password) {
+        Log.println(DEBUG, "loginAccount", String.format("Logging in user: %s", email));
+        AccountRestClient.loginAccount(context, email, password, new JsonHttpResponseHandler() {
+            @Override
+            public void onSuccess(int statusCode, Header[] headers, JSONObject jsonObject) {
+                Gson g = new Gson();
+                AccountLoginData accountLoginData = g.fromJson(jsonObject.toString(), AccountLoginData.class);
+                loginResult.setValue(new LoginResult(new LoggedInUserView(accountLoginData.getData().getUser().getFirstName() + " "
+                + accountLoginData.getData().getUser().getLastName())));
+                Log.println(DEBUG, "loginAccount", String.format("User: %s logged in successfully, name: %s", email, accountLoginData.getData().getUser().getLastName()));
+            }
+
+            @Override
+            public void onFailure(int statusCode, Header[] headers, Throwable e, JSONObject jsonObject) {
+                Log.println(WARN, "loginAccount", jsonObject.toString());
+                loginResult.setValue(new LoginResult(R.string.login_failed));
+            }
+        });
     }
 
     public void loginDataChanged(String username, String password) {
