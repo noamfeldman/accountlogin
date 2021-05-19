@@ -11,9 +11,7 @@ import androidx.lifecycle.ViewModel;
 import com.borderfree.account.login.R;
 import com.borderfree.account.login.data.AccountRestClient;
 import com.borderfree.account.login.data.LoginRepository;
-import com.borderfree.account.login.data.Result;
 import com.borderfree.account.login.data.model.AccountLoginData;
-import com.borderfree.account.login.data.model.LoggedInUser;
 import com.google.gson.Gson;
 import com.loopj.android.http.JsonHttpResponseHandler;
 
@@ -42,18 +40,6 @@ public class LoginViewModel extends ViewModel {
         return loginResult;
     }
 
-    public void login(String username, String password) {
-        // can be launched in a separate asynchronous job
-        Result<LoggedInUser> result = loginRepository.login(username, password);
-
-        if (result instanceof Result.Success) {
-            LoggedInUser data = ((Result.Success<LoggedInUser>) result).getData();
-            loginResult.setValue(new LoginResult(new LoggedInUserView(data.getDisplayName())));
-        } else {
-            loginResult.setValue(new LoginResult(R.string.login_failed));
-        }
-    }
-
     public void loginAccount(Context context, String email, String password) {
         Log.println(DEBUG, "loginAccount", String.format("Logging in user: %s", email));
         AccountRestClient.loginAccount(context, email, password, new JsonHttpResponseHandler() {
@@ -61,8 +47,7 @@ public class LoginViewModel extends ViewModel {
             public void onSuccess(int statusCode, Header[] headers, JSONObject jsonObject) {
                 Gson g = new Gson();
                 AccountLoginData accountLoginData = g.fromJson(jsonObject.toString(), AccountLoginData.class);
-                loginResult.setValue(new LoginResult(new LoggedInUserView(accountLoginData.getData().getUser().getFirstName() + " "
-                + accountLoginData.getData().getUser().getLastName())));
+                loginResult.setValue(new LoginResult(new LoggedInUserView(accountLoginData.getData())));
                 Log.println(DEBUG, "loginAccount", String.format("User: %s logged in successfully, name: %s", email, accountLoginData.getData().getUser().getLastName()));
             }
 

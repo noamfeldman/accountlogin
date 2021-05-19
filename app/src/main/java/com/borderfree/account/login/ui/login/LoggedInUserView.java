@@ -1,17 +1,18 @@
 package com.borderfree.account.login.ui.login;
 
+import com.borderfree.account.login.data.model.AccountLogin;
+
 /**
  * Class exposing authenticated user details to the UI.
  */
 class LoggedInUserView {
-    private String displayName;
-    //... other data fields that may be accessible to the UI
+    private final AccountLogin accountLogin;
 
-    LoggedInUserView(String displayName) {
-        this.displayName = displayName;
+    public LoggedInUserView(AccountLogin accountLogin) {
+        this.accountLogin = accountLogin;
     }
 
     String getDisplayName() {
-        return displayName;
+        return accountLogin.getUser().getFirstName() + " " + accountLogin.getUser().getLastName();
     }
 }
